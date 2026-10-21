@@ -10,6 +10,20 @@ A gated execution playbook for Claude: any multi-step build task is cut into wor
 
 **Claude Code, personal** — copy it to `~/.claude/skills/execution-playbook/`.
 
+## How a run flows
+
+Open [`docs/execution-flow.html`](docs/execution-flow.html) for the interactive page (level of detail, guards table, model per stage, PNG export). The two diagrams:
+
+**One run, end to end** — intake and the three question rounds, Phase 0 and DC-000, the work-package loop with its fix / scoped re-review branch and BLOCKED exit, then the final audit and handover.
+
+![Execution flow overview](docs/execution-flow-overview-light.png)
+
+**Inside one work package** — Build (context pack → tests first → implement → mutation harness → one gate run) and Verify (tree-hash check → fresh adversarial review), with the fix loop that continues the builder and re-reviews only what changed. Dashed boxes are scripts that ship with the skill.
+
+![Work-package loop](docs/work-package-loop-light.png)
+
+Dark-theme versions: [`execution-flow-overview-dark.png`](docs/execution-flow-overview-dark.png), [`work-package-loop-dark.png`](docs/work-package-loop-dark.png).
+
 ## What is in the skill
 
 | Path | Purpose |

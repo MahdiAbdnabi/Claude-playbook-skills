@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>[hidden]{display:none!important}</style>
+<title>Execution Playbook Flow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column with full-width diagram bands; numbered stages because the run IS a sequence. */
+:root{
+  --bg:#F6F7F4; --surface:#FFFFFF; --surface-2:#ECEFEA; --line:#D5DAD2; --ink:#1C2430; --ink-2:#4A5563; --ink-3:#7C8794;
+  --accent:#3B5BDB; --accent-soft:rgba(59,91,219,.10);
+  --card:#C77D0E; --card-soft:rgba(199,125,14,.12);          /* decision cards */
+  --pass:#0F8C7A; --pass-soft:rgba(15,140,122,.12);           /* gates passed */
+  --stop:#C6453A; --stop-soft:rgba(198,69,58,.12);            /* blocked / blocking */
+  --display:"Sora",system-ui,sans-serif; --body:"Public Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141921; --surface:#1B222C; --surface-2:#232C38; --line:#2F3946; --ink:#E6EAEF; --ink-2:#AEB7C3; --ink-3:#6E7A88;
+  --accent:#8EA3F2; --accent-soft:rgba(142,163,242,.14); --card:#E8A33D; --card-soft:rgba(232,163,61,.14);
+  --pass:#4FD1C5; --pass-soft:rgba(79,209,197,.14); --stop:#F07C70; --stop-soft:rgba(240,124,112,.14); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141921; --surface:#1B222C; --surface-2:#232C38; --line:#2F3946; --ink:#E6EAEF; --ink-2:#AEB7C3; --ink-3:#6E7A88;
+  --accent:#8EA3F2; --accent-soft:rgba(142,163,242,.14); --card:#E8A33D; --card-soft:rgba(232,163,61,.14);
+  --pass:#4FD1C5; --pass-soft:rgba(79,209,197,.14); --stop:#F07C70; --stop-soft:rgba(240,124,112,.14); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4vw,40px);font-weight:700;line-height:1.15;margin:0 0 10px}
+h2{font-size:22px;font-weight:600;margin:0 0 6px}
+h3{font-size:16px;font-weight:600;margin:0 0 6px}
+p{margin:0 0 12px;color:var(--ink-2);max-width:68ch}
+.lede{font-size:18px;color:var(--ink-2);max-width:62ch}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+section{margin-top:56px}
+.stage{display:grid;grid-template-columns:52px 1fr;gap:16px;align-items:start}
+.num{font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid var(--line);border-radius:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;margin:18px 0 8px;position:relative}
+.diagram svg{display:block;min-width:720px;width:100%;height:auto}
+.export{position:absolute;top:10px;right:10px;font-family:var(--body);font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer}
+.export:hover,.export:focus-visible{color:var(--accent);border-color:var(--accent);outline:none}
+.overlay[hidden]{display:none!important}
+.overlay{position:fixed;inset:0;background:rgba(10,14,20,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-left,0px));z-index:50}
+.overlay .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;max-width:min(1100px,100%);max-height:100%;overflow:auto;padding:16px;min-width:0}
+.overlay img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px}
+.overlay .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.overlay .hint{font-size:13px;color:var(--ink-2);margin:0}
+.overlay .btns{display:flex;gap:8px}
+.overlay button{font-family:var(--body);font-size:13px;font-weight:500;padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer}
+.overlay button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.overlay button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:13px;color:var(--ink-2);margin:6px 0 0}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1.5px solid}
+.legend .l-stage::before{border-color:var(--accent);background:var(--accent-soft)}
+.legend .l-card::before{border-color:var(--card);background:var(--card-soft)}
+.legend .l-pass::before{border-color:var(--pass);background:var(--pass-soft)}
+.legend .l-stop::before{border-color:var(--stop);background:var(--stop-soft)}
+.legend .l-script::before{border-color:var(--ink-3);background:var(--surface-2);border-style:dashed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.tile h3{margin-bottom:8px}
+.tile ul{margin:0;padding-left:18px;color:var(--ink-2)}
+.tile li{margin:4px 0}
+.tile .opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)}
+.chip.rec{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.tag{font-family:var(--mono);font-size:12px;padding:1px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
+.t-src{color:var(--pass);border-color:var(--pass)} .t-gap{color:var(--stop);border-color:var(--stop)} .t-dc{color:var(--card);border-color:var(--card)} .t-adr{color:var(--accent);border-color:var(--accent)}
+.note{border-left:3px solid var(--card);background:var(--card-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin-top:16px}
+.note p{margin:0;color:var(--ink)}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+@media (max-width:640px){.stage{grid-template-columns:1fr}.num{width:36px;height:36px}}
+@media (prefers-reduced-motion:no-preference){.tile{transition:border-color .15s}.tile:hover{border-color:var(--accent)}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">execution-playbook · how a run works</p>
+  <h1>From a task to a gated, audited build</h1>
+  <p class="lede">The skill turns one task into ordered work packages. Each is designed, built tests-first, verified by gate commands and a fresh adversarial reviewer, and closed with a Decision Card. The diagram below is the whole run; the sections after it open each part.</p>
+
+  <!-- ========================= OVERVIEW ========================= -->
+  <section>
+    <p class="eyebrow">Overview</p>
+    <h2>One run, end to end</h2>
+    <div class="diagram">
+      <button class="export" type="button" data-export="run-overview">Export PNG</button>
+      <svg id="svg-run-overview" viewBox="0 0 1000 560" role="img" aria-label="Flow of an execution-playbook run">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-3)"/></marker>
+          <marker id="arrStop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--stop)"/></marker>
+          <marker id="arrPass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--pass)"/></marker>
+        </defs>
+        <style>
+          .n rect{rx:8;ry:8;stroke-width:1.5}
+          .n text{font-family:var(--body);font-size:13px;fill:var(--ink)}
+          .n .sub{font-size:11px;fill:var(--ink-2)}
+          .st rect{fill:var(--accent-soft);stroke:var(--accent)}
+          .dc rect{fill:var(--card-soft);stroke:var(--card)}
+          .ok rect{fill:var(--pass-soft);stroke:var(--pass)}
+          .no rect{fill:var(--stop-soft);stroke:var(--stop)}
+          .e{fill:none;stroke:var(--ink-3);stroke-width:1.5;marker-end:url(#arr)}
+          .e.stop{stroke:var(--stop);marker-end:url(#arrStop)}
+          .e.pass{stroke:var(--pass);marker-end:url(#arrPass)}
+          .lab{font-family:var(--mono);font-size:10.5px;fill:var(--ink-3)}
+          .loopbox{fill:none;stroke:var(--line);stroke-dasharray:5 4;rx:12}
+          .looplab{font-family:var(--mono);font-size:11px;fill:var(--ink-3);letter-spacing:.06em}
+        </style>
+
+        <!-- row 1: intake → questions → phase 0 → DC-000 -->
+        <g class="n st"><rect x="20" y="30" width="170" height="56"/><text x="105" y="53" text-anchor="middle">Intake</text><text x="105" y="71" text-anchor="middle" class="sub">summary · expected output · access</text></g>
+        <g class="n st"><rect x="230" y="30" width="190" height="56"/><text x="325" y="53" text-anchor="middle">Pre-run questions</text><text x="325" y="71" text-anchor="middle" class="sub">rounds A · B · C</text></g>
+        <g class="n st"><rect x="460" y="30" width="200" height="56"/><text x="560" y="53" text-anchor="middle">Phase 0 — Frame</text><text x="560" y="71" text-anchor="middle" class="sub">DoD · WPs · CLAUDE.md · tracker</text></g>
+        <g class="n dc"><rect x="700" y="30" width="130" height="56"/><text x="765" y="53" text-anchor="middle">DC-000</text><text x="765" y="71" text-anchor="middle" class="sub">approve breakdown</text></g>
+        <path class="e" d="M190 58H230"/><path class="e" d="M420 58H460"/><path class="e" d="M660 58H700"/>
+        <path class="e" d="M765 86V130"/><text class="lab" x="774" y="112">per WP, pilot first</text>
+
+        <!-- loop box -->
+        <rect class="loopbox" x="20" y="130" width="960" height="300"/>
+        <text class="looplab" x="36" y="150">WORK-PACKAGE LOOP · Design → Build → Verify → Card</text>
+
+        <!-- row 2 -->
+        <g class="n st"><rect x="40" y="170" width="150" height="56"/><text x="115" y="193" text-anchor="middle">1 · Design</text><text x="115" y="211" text-anchor="middle" class="sub">ACs · test list · ADRs</text></g>
+        <g class="n dc"><rect x="220" y="170" width="110" height="56"/><text x="275" y="193" text-anchor="middle">DC</text><text x="275" y="211" text-anchor="middle" class="sub">design → build</text></g>
+        <g class="n st"><rect x="360" y="170" width="190" height="56"/><text x="455" y="193" text-anchor="middle">2 · Build</text><text x="455" y="211" text-anchor="middle" class="sub">tests first · sweep · gate once</text></g>
+        <g class="n st"><rect x="580" y="170" width="190" height="56"/><text x="675" y="193" text-anchor="middle">3 · Verify</text><text x="675" y="211" text-anchor="middle" class="sub">hash check · fresh reviewer</text></g>
+        <g class="n ok"><rect x="800" y="170" width="160" height="56"/><text x="880" y="193" text-anchor="middle">4 · Integrate</text><text x="880" y="211" text-anchor="middle" class="sub">commit · DC → next WP</text></g>
+        <path class="e" d="M190 198H220"/><path class="e" d="M330 198H360"/><path class="e" d="M550 198H580"/>
+        <path class="e pass" d="M770 198H800"/><text class="lab" x="774" y="190">PASS</text>
+
+        <!-- fail loop -->
+        <path class="e stop" d="M675 226V270"/><text class="lab" x="684" y="252">FAIL</text>
+        <g class="n st"><rect x="580" y="270" width="190" height="56"/><text x="675" y="293" text-anchor="middle">Fix</text><text x="675" y="311" text-anchor="middle" class="sub">continue builder · gate once</text></g>
+        <path class="e" d="M580 298H550"/>
+        <g class="n st"><rect x="360" y="270" width="190" height="56"/><text x="455" y="293" text-anchor="middle">Scoped re-review</text><text x="455" y="311" text-anchor="middle" class="sub">prior findings · diff since</text></g>
+        <path class="e pass" d="M455 270V226"/><text class="lab" x="462" y="252">PASS → back</text>
+        <path class="e stop" d="M455 326V370"/><text class="lab" x="464" y="352">FAIL ×2</text>
+        <g class="n no"><rect x="360" y="370" width="190" height="48"/><text x="455" y="391" text-anchor="middle">BLOCKED</text><text x="455" y="407" text-anchor="middle" class="sub">run stops</text></g>
+        <g class="n dc"><rect x="580" y="370" width="190" height="48"/><text x="675" y="391" text-anchor="middle">DC — human</text><text x="675" y="407" text-anchor="middle" class="sub">continue · split · stop</text></g>
+        <path class="e" d="M550 394H580"/>
+        <text class="lab" x="40" y="300">blast-radius trigger →</text><text class="lab" x="40" y="316">full review instead</text>
+
+        <!-- loop back to Design -->
+        <path class="e" d="M880 226V416H60V226"/>
+        <text class="lab" x="100" y="410">next WP in dependency order</text>
+
+        <!-- row 3: audit → handover -->
+        <path class="e" d="M500 430V470"/>
+        <g class="n st"><rect x="300" y="470" width="190" height="56"/><text x="395" y="493" text-anchor="middle">5 · Final audit</text><text x="395" y="511" text-anchor="middle" class="sub">fresh · DoD → AC → test</text></g>
+        <g class="n ok"><rect x="530" y="470" width="190" height="56"/><text x="625" y="493" text-anchor="middle">6 · Handover</text><text x="625" y="511" text-anchor="middle" class="sub">runbook · ADRs · open cards</text></g>
+        <path class="e" d="M490 498H530"/>
+      </svg>
+    </div>
+    <div class="legend"><span class="l-stage">stage run by an agent</span><span class="l-card">Decision Card</span><span class="l-pass">gate passed / done</span><span class="l-stop">stop</span></div>
+  </section>
+
+  <!-- ========================= STAGE 1 ========================= -->
+  <section class="stage">
+    <div class="num">01</div>
+    <div>
+      <h2>Intake and the pre-run questions</h2>
+      <p>Nothing is generated until these are answered. The summary is mandatory and may come from the user, a document, or be suggested backwards from the expected output and confirmed. The expected output is a list of artefacts, each with where it lives and how its existence is checked; that list becomes the top of the definition of done.</p>
+      <div class="grid">
+        <div class="tile"><h3>Round A — scope and effort</h3>
+          <div class="opts"><span class="chip">Fastest POC</span><span class="chip rec">MVP</span><span class="chip">Full</span></div>
+          <ul><li>Fidelity decides scope, never rigor</li><li>Effort on Logic · Architecture &amp; Solution Design · UI Design, each Very Low / Recommended / I Am Too Rich</li><li>Technology suggested first if the task is coding and no stack was named</li></ul></div>
+        <div class="tile"><h3>Round B — execution</h3>
+          <div class="opts"><span class="chip">Fully Automated</span><span class="chip">User Monitored</span></div>
+          <ul><li>Output format HTML / MD / Both</li><li>Cost profile Very Low Budget / Recommended / I Am Too Rich → model tier per stage</li><li>Tooling: Claude only, or a tool → purpose → WPs map with availability</li></ul></div>
+        <div class="tile"><h3>Round C — checks</h3>
+          <div class="opts"><span class="chip">Reviewer effort None · Low · Medium · High</span></div>
+          <ul><li>Each option states its cost per review and what it misses</li><li>Build self-check Minimal / Standard / Tool-backed</li><li>Extra review lenses on top of Correctness, Security, Maintainability, Operability</li></ul></div>
+      </div>
+      <p style="margin-top:14px">The run then reads the whole configuration back in one block, generates the tracker and the usage guide, and only then starts Phase 0.</p>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 2 ========================= -->
+  <section class="stage">
+    <div class="num">02</div>
+    <div>
+      <h2>Inside one work package</h2>
+      <p>The loop is where cost and quality are decided, so it is drawn separately. Dashed boxes are scripts that ship with the skill; they replace the hand steps that made earlier runs expensive.</p>
+      <div class="diagram">
+        <button class="export" type="button" data-export="work-package-loop">Export PNG</button>
+        <svg id="svg-work-package-loop" viewBox="0 0 1000 420" role="img" aria-label="Build and verify detail for one work package">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-3)"/></marker>
+            <marker id="arrStop2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--stop)"/></marker>
+            <marker id="arrPass2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--pass)"/></marker>
+          </defs>
+          <style>
+            .n rect{rx:8;ry:8;stroke-width:1.5}
+            .n text{font-family:var(--body);font-size:12.5px;fill:var(--ink)}
+            .n .sub{font-size:10.5px;fill:var(--ink-2)}
+            .st rect{fill:var(--accent-soft);stroke:var(--accent)}
+            .sc rect{fill:var(--surface-2);stroke:var(--ink-3);stroke-dasharray:4 3}
+            .ok rect{fill:var(--pass-soft);stroke:var(--pass)}
+            .no rect{fill:var(--stop-soft);stroke:var(--stop)}
+            .dc rect{fill:var(--card-soft);stroke:var(--card)}
+            .e{fill:none;stroke:var(--ink-3);stroke-width:1.5;marker-end:url(#arr2)}
+            .e.stop{stroke:var(--stop);marker-end:url(#arrStop2)}
+            .e.pass{stroke:var(--pass);marker-end:url(#arrPass2)}
+            .lab{font-family:var(--mono);font-size:10.5px;fill:var(--ink-3)}
+            .band{font-family:var(--mono);font-size:11px;fill:var(--ink-3);letter-spacing:.06em}
+          </style>
+          <text class="band" x="20" y="24">BUILD · builder agent · one conversation</text>
+          <g class="n sc"><rect x="20" y="40" width="200" height="52"/><text x="120" y="61" text-anchor="middle">build_context_pack.py</text><text x="120" y="78" text-anchor="middle" class="sub">shared block (cached) + WP block</text></g>
+          <g class="n st"><rect x="250" y="40" width="160" height="52"/><text x="330" y="61" text-anchor="middle">Tests first</text><text x="330" y="78" text-anchor="middle" class="sub">fail-first run pasted in WP</text></g>
+          <g class="n st"><rect x="440" y="40" width="150" height="52"/><text x="515" y="61" text-anchor="middle">Implement</text><text x="515" y="78" text-anchor="middle" class="sub">within the fence</text></g>
+          <g class="n sc"><rect x="620" y="40" width="170" height="52"/><text x="705" y="61" text-anchor="middle">mutate.py</text><text x="705" y="78" text-anchor="middle" class="sub">worktree · sentinels · table</text></g>
+          <g class="n sc"><rect x="820" y="40" width="160" height="52"/><text x="900" y="61" text-anchor="middle">gate.py — once</text><text x="900" y="78" text-anchor="middle" class="sub">summary + tree hash</text></g>
+          <path class="e" d="M220 66H250"/><path class="e" d="M410 66H440"/><path class="e" d="M590 66H620"/><path class="e" d="M790 66H820"/>
+          <path class="e" d="M900 92V150"/>
+          <text class="lab" x="700" y="120">survivors → tests, never removal of env guards</text>
+
+          <text class="band" x="20" y="140">VERIFY · fresh reviewer · none of the builder's reasoning</text>
+          <g class="n sc"><rect x="700" y="150" width="200" height="52"/><text x="800" y="171" text-anchor="middle">gate.py --verify</text><text x="800" y="188" text-anchor="middle" class="sub">tree hash = log hash?</text></g>
+          <path class="e stop" d="M700 176H560"/><text class="lab" x="585" y="168">mismatch → Blocking</text>
+          <g class="n no"><rect x="440" y="150" width="120" height="52"/><text x="500" y="171" text-anchor="middle">Blocking</text><text x="500" y="188" text-anchor="middle" class="sub">re-run gate first</text></g>
+          <path class="e" d="M800 202V240"/>
+          <g class="n st"><rect x="640" y="240" width="320" height="64"/><text x="800" y="262" text-anchor="middle">Adversarial review (reviewer pack)</text><text x="800" y="279" text-anchor="middle" class="sub">falsify 5 claims · re-apply 3 mutants · lens checks</text><text x="800" y="294" text-anchor="middle" class="sub">model per cost profile · scope per reviewer effort</text></g>
+          <path class="e pass" d="M640 272H560"/><text class="lab" x="575" y="264">PASS</text>
+          <g class="n ok"><rect x="440" y="246" width="120" height="52"/><text x="500" y="267" text-anchor="middle">Gate passed</text><text x="500" y="284" text-anchor="middle" class="sub">commit · DC</text></g>
+          <path class="e stop" d="M800 304V340"/><text class="lab" x="808" y="326">FAIL</text>
+
+          <text class="band" x="20" y="330">FIX LOOP · max 2</text>
+          <g class="n st"><rect x="640" y="340" width="320" height="52"/><text x="800" y="361" text-anchor="middle">Fix — continue the builder</text><text x="800" y="378" text-anchor="middle" class="sub">findings as facts · extend mutants · gate.py once</text></g>
+          <path class="e" d="M640 366H440"/>
+          <g class="n sc"><rect x="220" y="340" width="220" height="52"/><text x="330" y="361" text-anchor="middle">build_context_pack.py --scoped</text><text x="330" y="378" text-anchor="middle" class="sub">diff since · test diff · triggers</text></g>
+          <path class="e" d="M220 366H190"/>
+          <g class="n st"><rect x="20" y="340" width="170" height="52"/><text x="105" y="361" text-anchor="middle">Scoped re-review</text><text x="105" y="378" text-anchor="middle" class="sub">one tier below · or full</text></g>
+          <path class="e pass" d="M105 340V272H440"/><text class="lab" x="115" y="300">PASS → gate passed</text>
+          <path class="e stop" d="M60 392V410H330"/><text class="lab" x="120" y="408">2nd FAIL → BLOCKED + card</text>
+        </svg>
+      </div>
+      <div class="legend"><span class="l-stage">agent stage</span><span class="l-script">shipped script</span><span class="l-pass">pass</span><span class="l-stop">blocking / fail</span></div>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 3 ========================= -->
+  <section class="stage">
+    <div class="num">03</div>
+    <div>
+      <h2>Guards: what each shortcut is not allowed to hide</h2>
+      <p>Every cost-saving rule in the loop carries a mechanical check, so a cheaper run cannot pass as a thorough one.</p>
+      <div class="tbl"><table>
+        <tr><th>Rule</th><th>What it saves</th><th>Guard</th></tr>
+        <tr><td>Context packs</td><td>Helpers stop loading 150–360k tokens of reading list</td><td>Everything quoted carries <span class="tag t-src">[src:]</span>; an on-demand read list; a helper that needs more raises <span class="tag t-gap">[GAP]</span> instead of roaming; packs stamped with the commit and marked stale if a quoted file changed</td></tr>
+        <tr><td>Mutation harness</td><td>One call instead of edit / run / restore per mutant</td><td>Baseline must pass in the private copy; a known-killed and a known-survivor sentinel fail the harness on mismatch; environment guards can never be removal candidates</td></tr>
+        <tr><td>One gate run</td><td>Builder, coordinator and reviewer no longer each re-run five minutes of tests</td><td>Log stamped with the tree hash; the reviewer's first action is <code>gate.py --verify</code>; a mismatch is Blocking</td></tr>
+        <tr><td>Call caps</td><td>Shorter conversations, fewer re-reads</td><td>Stopping at the cap with a clean handoff is a correct outcome; the cap never skips the sweep or the gate; a hit raises a card (continue +N · split · stop)</td></tr>
+        <tr><td>Fix by continuation</td><td>No fresh fix helper reloading the project</td><td>Only while the builder's conversation is cached and under the size threshold; findings enter as facts; a weakened test is Blocking at re-review</td></tr>
+        <tr><td>Scoped re-review</td><td>Second reviews cost a fraction of the first</td><td>Escalates to a full review when the diff leaves the fence, touches a quoted contract or a test's assertions, exceeds a third of the WP, a prior High was on Security/Compliance/Domain, the WP is <span class="tag t-src">[PROTECTED]</span>, it is attempt 3, or the reviewer sees a new High outside the diff</td></tr>
+        <tr><td>Reviewer effort levels</td><td>Low and Medium cost 5–30k per review instead of 80–360k</td><td>None marks every gate and is listed by Phase 5; after the pilot the actual tokens and findings are read back next to the chosen level</td></tr>
+      </table></div>
+      <div class="note"><p>Rigor is never on the dial. Fidelity, effort, cost profile, reviewer effort and self-check change <em>how much is in scope</em> and <em>how hard it is checked</em>; they never change that tests come first, the reviewer is fresh, gaps are tagged, and a gate is never weakened for what is in scope.</p></div>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 4 ========================= -->
+  <section class="stage">
+    <div class="num">04</div>
+    <div>
+      <h2>Who runs what, and on which model</h2>
+      <p>The agent that invoked the skill is the orchestrator. It launches a separate agent per stage with the model and effort resolved from the cost profile, collects findings and tags, logs calls and tokens, and raises Decision Cards. It never builds, reviews or re-runs a gate whose hash matches.</p>
+      <div class="tbl"><table>
+        <tr><th>Stage</th><th>Recommended</th><th>Very Low Budget</th><th>I Am Too Rich</th><th>Critical</th></tr>
+        <tr><td>0 Frame</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>1 Design</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>strong when protected or irreversible</td></tr>
+        <tr><td>2 Build</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>3 Review</td><td>Opus / xhigh</td><td>Sonnet / high (floor)</td><td>Fable / xhigh</td><td>yes</td></tr>
+        <tr><td>3 Fix loop</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>3 Scoped re-review</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>escalates to the review tier on a trigger</td></tr>
+        <tr><td>4 Integrate</td><td>Haiku / medium</td><td>Haiku / low</td><td>Sonnet / medium</td><td>—</td></tr>
+        <tr><td>5 Audit</td><td>Opus / xhigh</td><td>Sonnet / high (floor)</td><td>Fable / xhigh</td><td>yes</td></tr>
+        <tr><td>6 Handover</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+      </table></div>
+      <p style="margin-top:12px">The tracker shows three columns per stage, recommended, resolved for this profile, and actually used from the session log, so a budget run is never mistaken for a recommended one.</p>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 5 ========================= -->
+  <section class="stage">
+    <div class="num">05</div>
+    <div>
+      <h2>What a run leaves behind</h2>
+      <div class="grid">
+        <div class="tile"><h3>Records</h3><ul><li><code>PLAYBOOK.md</code> goal, definition of done, locked decisions, WP breakdown</li><li><code>work-packages/WP-NN.md</code> ACs, test list, fail-first evidence, mutation table, gate history</li><li><code>decisions/DC-###.md</code> every card with its evidence and outcome</li><li><code>adr/</code>, <code>DECISIONS.md</code>, <code>GAPS.md</code>, <code>RISKS.md</code></li></ul></div>
+        <div class="tile"><h3>Evidence</h3><ul><li><code>logs/WP-NN-gate-n.json</code> structured gate summaries with tree hash</li><li><code>logs/WP-NN-mutation.md</code> harness tables</li><li><code>review/WP-NN-review-n.md</code> findings per attempt, scoped or full</li><li><code>packs/</code> what each helper was actually given</li></ul></div>
+        <div class="tile"><h3>Measurement</h3><ul><li>First-review pass rate (baseline run: 1 of 7)</li><li>Calls per stage against the cap; cap hits</li><li>Review tokens first → re-review; scoped vs full</li><li>Mutants listed / survived; fixes continued vs fresh</li></ul></div>
+      </div>
+      <p style="margin-top:14px">The tracker's "Next action" line and the usage guide are what a returning person or a fresh session reads first. Answering an open card is one line: <code>DC-007: B — keep the dispatcher hand-rolled</code>.</p>
+    </div>
+  </section>
+
+  <footer>Tags used throughout: <span class="tag t-src">[src:]</span> <span class="tag t-gap">[GAP]</span> <span class="tag t-adr">[ADR-###]</span> <span class="tag t-dc">[DC-###]</span> · Phase 5 remains a fresh, full pass over the whole run, so anything a scoped review missed still has a backstop.</footer>
+
+<div id="png-overlay" class="overlay" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-label="Diagram as PNG">
+    <div class="bar">
+      <p class="hint" id="png-hint">PNG ready. Right-click (or long-press on a phone) the image and choose "Save image as", or copy it.</p>
+      <div class="btns"><button type="button" id="png-copy" class="primary">Copy image</button><button type="button" id="png-close">Close</button></div>
+    </div>
+    <img id="png-img" alt="Exported diagram">
+  </div>
+</div>
+<script>
+(function(){
+  var PROPS=['fill','stroke','stroke-width','stroke-dasharray','marker-end','marker-start','font-family','font-size','font-weight','letter-spacing','text-anchor','opacity'];
+  function inlineStyles(src, clone){
+    var a=src.querySelectorAll('*'), b=clone.querySelectorAll('*');
+    for(var i=0;i<a.length;i++){
+      var cs=getComputedStyle(a[i]); var st='';
+      PROPS.forEach(function(p){ var v=cs.getPropertyValue(p); if(v) st+=p+':'+v+';'; });
+      if(a[i].tagName.toLowerCase()==='rect'){ var rx=cs.getPropertyValue('rx'); if(rx&&rx!=='auto'){ b[i].setAttribute('rx',parseFloat(rx)); b[i].setAttribute('ry',parseFloat(rx)); } }
+      b[i].setAttribute('style',st);
+    }
+    clone.querySelectorAll('style').forEach(function(x){x.remove();});
+  }
+  function exportPng(id){
+    var src=document.getElementById('svg-'+id); if(!src) return;
+    var clone=src.cloneNode(true); inlineStyles(src, clone);
+    clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var vb=src.viewBox.baseVal, W=vb.width, H=vb.height, scale=2;
+    clone.setAttribute('width',W); clone.setAttribute('height',H);
+    var bg=getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fff';
+    var xml=new XMLSerializer().serializeToString(clone);
+    var img=new Image();
+    img.onload=function(){
+      var c=document.createElement('canvas'); c.width=W*scale; c.height=H*scale;
+      var ctx=c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+      var out=document.getElementById('png-img'); out.src=c.toDataURL('image/png'); out.dataset.name=id+'.png';
+      document.getElementById('png-hint').textContent='PNG ready ('+(W*scale)+'×'+(H*scale)+'). Right-click, or long-press on a phone, and choose "Save image as" — or copy it.';
+      var ov=document.getElementById('png-overlay'); ov.hidden=false; document.getElementById('png-close').focus();
+    };
+    img.onerror=function(){ document.getElementById('png-hint').textContent='Could not rasterise this diagram in this browser.'; document.getElementById('png-overlay').hidden=false; };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+  }
+  document.querySelectorAll('[data-export]').forEach(function(b){ b.addEventListener('click',function(){ exportPng(b.dataset.export); }); });
+  document.getElementById('png-close').addEventListener('click',function(){ document.getElementById('png-overlay').hidden=true; });
+  document.getElementById('png-overlay').addEventListener('click',function(e){ if(e.target===e.currentTarget) e.currentTarget.hidden=true; });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') document.getElementById('png-overlay').hidden=true; });
+  document.getElementById('png-copy').addEventListener('click',function(){
+    var btn=this, img=document.getElementById('png-img');
+    function done(t){ btn.textContent=t; setTimeout(function(){btn.textContent='Copy image';},1800); }
+    try{
+      fetch(img.src).then(function(r){return r.blob();}).then(function(blob){
+        return navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      }).then(function(){done('Copied');}).catch(function(){done('Copy not allowed here — save the image instead');});
+    }catch(err){ done('Copy not allowed here — save the image instead'); }
+  });
+})();
+</script>
+</div>
+
+</body>
+</html>
