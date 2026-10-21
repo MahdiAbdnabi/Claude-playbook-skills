@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+_playbook/logs/
+_playbook/packs/

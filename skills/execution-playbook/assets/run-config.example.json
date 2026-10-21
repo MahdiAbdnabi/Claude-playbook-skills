@@ -1,0 +1,357 @@
+{
+  "task": "EE Simulator — scenario picker",
+  "goal": "Add a scenario picker to the Entry-Exit frontend simulation panel that reads the scenario library live from the simulator API, so testers select and run authored scenarios without editing JSON.",
+  "target": "Connected folder: modern-entryexit-core (git)",
+  "summary": "Testers currently edit upstream scenario JSON by hand; the picker should list, preview and apply scenarios. Stack: .NET 10 API, Angular 21, MongoDB, Redis. Simulator lives inside the main solution.",
+  "summary_sources": [
+    "user",
+    "document: simulator scenario spec v1.2"
+  ],
+  "expected_output": [
+    {
+      "artefact": "Scenario picker in the simulation panel",
+      "where": "modern-entryexit-core / sim-panel feature",
+      "check": "Playwright test opens the panel and lists ≥1 scenario from the API"
+    },
+    {
+      "artefact": "GET /sim/scenarios endpoint",
+      "where": "Simulator API project",
+      "check": "integration test returns the library; 401/404 when simulation mode is off"
+    },
+    {
+      "artefact": "ADR for library caching",
+      "where": "_playbook/adr/ADR-001.md",
+      "check": "file exists, status Accepted via DC-001"
+    }
+  ],
+  "stack": [
+    ".NET 10 API",
+    "Angular 21",
+    "MongoDB",
+    "Redis",
+    "xUnit + Playwright"
+  ],
+  "fidelity": "mvp",
+  "effort": {
+    "logic": "recommended",
+    "architecture": "recommended",
+    "ui": "very-low"
+  },
+  "review_depth": "medium",
+  "self_check": "standard",
+  "tooling": [
+    {
+      "tool": "GitHub Actions",
+      "used_for": "gate commands after each passed WP",
+      "wps": [
+        "all"
+      ],
+      "availability": "needs-setup: workflow file in WP-00",
+      "produces": "ci.yml + green run per WP"
+    },
+    {
+      "tool": "app-test-analyzer skill",
+      "used_for": "static test-scenario pass on WP-02 before review",
+      "wps": [
+        "WP-02"
+      ],
+      "availability": "available",
+      "produces": "review/WP-02-scenarios.md"
+    }
+  ],
+  "mode": "monitored",
+  "format": "both",
+  "cost_profile": "recommended",
+  "output_dir": "_playbook/",
+  "started": "2026-10-07",
+  "spec_ref": "git a81f3c2 · simulator scenario spec v1.2",
+  "budget": "2 fix loops",
+  "locked_decisions": [
+    "Scenario JSON format stays as-is; the picker reads it, never rewrites it",
+    "No new runtime dependencies beyond the locked stack",
+    "Simulation mode remains gated behind the existing feature flag"
+  ],
+  "non_goals": [
+    "Editing scenarios inside the EE frontend",
+    "Device simulation changes"
+  ],
+  "definition_of_done": [
+    "Simulation panel lists every scenario the simulator API exposes, live",
+    "Selecting a scenario applies it and the next officer action uses it",
+    "Picker is unreachable when simulation mode is off (server-side enforced)",
+    "All gates green from a clean checkout"
+  ],
+  "lenses": [
+    {
+      "id": "DOMAIN",
+      "perspective": "Would a domain expert accept it?",
+      "checks": [
+        "worst-wins combiner untouched [src:]",
+        "scenario outcomes match BR-### in the corpus"
+      ]
+    }
+  ],
+  "phase_status": {
+    "0": "done",
+    "5": "pending",
+    "6": "pending"
+  },
+  "work_packages": [
+    {
+      "id": "WP-00",
+      "name": "Scaffold & gate toolchain",
+      "depends_on": [],
+      "pilot": false,
+      "budget": "20 turns",
+      "stages": {
+        "design": "done",
+        "build": "done",
+        "verify": "done",
+        "integrate": "done"
+      },
+      "gate": {
+        "attempts": 1,
+        "fix_loops": 0,
+        "commands": "PASS",
+        "review": "PASS",
+        "blocked": false,
+        "first_review": "PASS",
+        "mutation": {
+          "listed": 4,
+          "survived": 0,
+          "tests_added": 0
+        }
+      },
+      "ac_total": 2,
+      "ac_tested": 2
+    },
+    {
+      "id": "WP-01",
+      "name": "Scenario library API endpoint",
+      "depends_on": [
+        "WP-00"
+      ],
+      "pilot": true,
+      "budget": "40 turns",
+      "stages": {
+        "design": "done",
+        "build": "done",
+        "verify": "done",
+        "integrate": "done"
+      },
+      "gate": {
+        "attempts": 2,
+        "fix_loops": 1,
+        "commands": "PASS",
+        "review": "PASS",
+        "blocked": false,
+        "first_review": "FAIL",
+        "mutation": {
+          "listed": 17,
+          "survived": 3,
+          "tests_added": 3
+        }
+      },
+      "ac_total": 5,
+      "ac_tested": 5
+    },
+    {
+      "id": "WP-02",
+      "name": "Picker component in simulation panel",
+      "depends_on": [
+        "WP-01"
+      ],
+      "pilot": false,
+      "budget": "40 turns",
+      "stages": {
+        "design": "done",
+        "build": "in_progress",
+        "verify": "pending",
+        "integrate": "pending"
+      },
+      "gate": {
+        "attempts": 0,
+        "fix_loops": 0,
+        "commands": "",
+        "review": "",
+        "blocked": false
+      },
+      "ac_total": 6,
+      "ac_tested": 2
+    },
+    {
+      "id": "WP-03",
+      "name": "Apply scenario → device/API responses",
+      "depends_on": [
+        "WP-02"
+      ],
+      "pilot": false,
+      "budget": "40 turns",
+      "stages": {
+        "design": "pending",
+        "build": "pending",
+        "verify": "pending",
+        "integrate": "pending"
+      },
+      "gate": {
+        "attempts": 0,
+        "fix_loops": 0,
+        "commands": "",
+        "review": "",
+        "blocked": false
+      },
+      "ac_total": 4,
+      "ac_tested": 0
+    }
+  ],
+  "decision_cards": [
+    {
+      "id": "DC-000",
+      "title": "Approve work-package breakdown",
+      "wp": "",
+      "between": "Phase 0 → WP-00 Design",
+      "status": "DECIDED",
+      "stops_run": true,
+      "decision": "B",
+      "by": "Mahdi",
+      "rule": null,
+      "date": "2026-10-07"
+    },
+    {
+      "id": "DC-001",
+      "title": "WP-01 design: cache the library in Redis or read-through?",
+      "wp": "WP-01",
+      "between": "Design → Build",
+      "status": "DECIDED",
+      "stops_run": false,
+      "decision": "A",
+      "by": "Mahdi",
+      "rule": null,
+      "date": "2026-10-07"
+    },
+    {
+      "id": "DC-002",
+      "title": "WP-01 gate passed on attempt 2 — proceed to WP-02?",
+      "wp": "WP-01",
+      "between": "Verify → WP-02 Design",
+      "status": "DECIDED",
+      "stops_run": false,
+      "decision": "A",
+      "by": "Mahdi",
+      "rule": null,
+      "date": "2026-10-07"
+    },
+    {
+      "id": "DC-003",
+      "title": "WP-02 design: picker as standalone component or inside existing panel?",
+      "wp": "WP-02",
+      "between": "Design → Build",
+      "status": "AUTO-DECIDED",
+      "stops_run": false,
+      "decision": "A",
+      "by": "",
+      "rule": 4,
+      "date": "2026-10-07"
+    }
+  ],
+  "adrs": [
+    {
+      "id": "ADR-001",
+      "title": "Read-through to simulator API; no Redis cache for the scenario library",
+      "status": "Accepted",
+      "dc": "DC-001"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "GAP-001",
+      "severity": "High",
+      "desc": "Max scenario library size unknown — affects pagination in WP-02",
+      "found_in": "WP-02, Phase 1",
+      "blocks": "AC-04 (list renders within 1s)",
+      "question": "Upper bound on scenarios per library — 50? 500?",
+      "answered": ""
+    },
+    {
+      "id": "GAP-002",
+      "severity": "Low",
+      "desc": "Scenario 'author' field present in some JSONs, not in the spec",
+      "found_in": "WP-01, Phase 2",
+      "blocks": "nothing — ignored by the endpoint",
+      "question": "Should the picker show author?",
+      "answered": ""
+    }
+  ],
+  "drifts": [
+    {
+      "id": "DRIFT-001",
+      "desc": "Spec v1.2 says scenario ids are GUIDs; 3 library files use slugs",
+      "side_a": "spec v1.2 §2 [src: SPEC §2]",
+      "side_b": "[src: scenarios/gcc-biometric.json#id]",
+      "protected": false,
+      "decision": ""
+    }
+  ],
+  "risks": [
+    {
+      "id": "RISK-001",
+      "risk": "Live read of library on every panel open may be slow on large libraries",
+      "likelihood": "M",
+      "impact": "L",
+      "trigger": "GAP-001 answer > 200",
+      "mitigation": "revisit ADR-001 (cache)",
+      "owner": "Mahdi"
+    }
+  ],
+  "citation_samples": [],
+  "sessions": [
+    {
+      "date": "2026-10-07",
+      "phase": "0",
+      "wp": "",
+      "model": "fable / high",
+      "notes": "4 WPs proposed; DC-000 decided B (merged WP-02/03 split)",
+      "calls": 9,
+      "cap": 12,
+      "tokens": 38000
+    },
+    {
+      "date": "2026-10-07",
+      "phase": "3",
+      "wp": "WP-01",
+      "model": "fable / xhigh (reviewer)",
+      "notes": "F-01 High SECURITY: endpoint lacked feature-flag check → fixed loop 1",
+      "calls": 11,
+      "cap": 12,
+      "tokens": 52000,
+      "attempt": 1,
+      "scope": "full"
+    },
+    {
+      "date": "2026-10-07",
+      "phase": "3fix",
+      "wp": "WP-01",
+      "model": "sonnet / high",
+      "calls": 6,
+      "cap": 15,
+      "tokens": 9000,
+      "fix": "continued",
+      "notes": "F-01 fixed; mutant M5 added"
+    },
+    {
+      "date": "2026-10-07",
+      "phase": "3",
+      "wp": "WP-01",
+      "model": "sonnet / high",
+      "calls": 5,
+      "cap": 8,
+      "tokens": 14000,
+      "attempt": 2,
+      "scope": "scoped",
+      "notes": "F-01 RESOLVED (M3 killed), no new findings"
+    }
+  ],
+  "delta_rounds": [],
+  "next_action": "Phase 2 (Build) for WP-02 — tests for AC-03..AC-06 still to write; GAP-001 blocks AC-04 pagination choice.",
+  "budget_tokens_continue": 150000
+}

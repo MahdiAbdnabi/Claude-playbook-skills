@@ -1,0 +1,38 @@
+{
+  "id": "DC-002",
+  "title": "WP-01 gate passed on attempt 2 — proceed to WP-02?",
+  "wp": "WP-01",
+  "between": "Verify → WP-02 Design",
+  "raised": "2026-10-07",
+  "stops_run": false,
+  "reversible": true,
+  "budget_impact": "none",
+  "what_was_done": [
+    "Scenario library endpoint GET /sim/scenarios implemented with read-through to the simulator store [src: ScenarioLibraryController.cs#List]",
+    "Feature-flag gate added server-side after reviewer finding F-01 [src: SimulationModeFilter.cs#OnActionExecuting]",
+    "5/5 acceptance criteria tested [src: work-packages/WP-01-scenario-library-api.md]"
+  ],
+  "evidence": {
+    "gate": "PASS (attempt 2) — 31 tests, lint and build clean [src: logs/WP-01-gate-2.log]",
+    "review": "PASS — F-01 (High, SECURITY) endpoint reachable with simulation mode off → fixed in loop 1; F-02 (Low, MAINTAINABILITY) duplicated DTO mapping → deferred [PLANNED] WP-03",
+    "gaps": ["GAP-002"],
+    "adrs": ["ADR-001"],
+    "drifts": ["DRIFT-001"]
+  },
+  "question": "Proceed to WP-02 (picker component) now, or resolve DRIFT-001 (GUID vs slug ids) first?",
+  "options": [
+    { "key": "A", "option": "Proceed to WP-02; endpoint returns ids as-is, picker treats id as opaque string", "consequence": "DRIFT-001 stays open; WP-03 must not assume GUIDs", "cost": "none", "reversible": true, "risk": "low — [RISK] noted on WP-03 design" },
+    { "key": "B", "option": "Resolve DRIFT-001 first: normalise the 3 slug files to GUIDs", "consequence": "Touches scenario JSON (locked decision 1 says never rewrite) — needs an ADR to override", "cost": "~10 turns + a locked-decision override", "reversible": false, "risk": "medium — rewrites test fixtures used by QA" },
+    { "key": "C", "option": "Pause; ask QA which id form is canonical", "consequence": "Run waits; WP-02 design could start in parallel", "cost": "calendar time", "reversible": true, "risk": "low" }
+  ],
+  "recommendation": { "key": "A", "reason": "Opaque-id handling satisfies every AC and keeps locked decision 1 intact; DRIFT-001 is a spec question, not a build blocker." },
+  "default": { "key": "A", "rule": 4 },
+  "decision": {
+    "key": "A",
+    "by": "Mahdi",
+    "rule": null,
+    "date": "2026-10-07",
+    "rationale": "Treat ids as opaque; raise DRIFT-001 with QA separately.",
+    "followups": ["RISK-002 added to WP-03 design", "DRIFT-001 assigned to QA lead"]
+  }
+}
