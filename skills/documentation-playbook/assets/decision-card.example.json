@@ -1,0 +1,69 @@
+{
+  "id": "DC-001",
+  "title": "Pilot shape check — scale the pattern to the remaining batches?",
+  "wp": "",
+  "between": "Pilot Phase 5 → Phase 1 of batch 2",
+  "raised": "2026-10-07",
+  "stops_run": false,
+  "reversible": true,
+  "budget_impact": "none",
+  "what_was_done": [
+    "Pilot batch 'Movement & Risk' through Phases 1–5 [src: docs/_playbook/TRACKER.md]",
+    "doc_check 3: 212/219 citations resolved, 0 hedges [src: logs/check-3.json]",
+    "Audit sample 15/15 hits; 5 falsification attempts, 0 falsified [src: logs/audit-1.md]"
+  ],
+  "evidence": {
+    "gate": "doc_check 3 clean · tree 3f9c2a1+ab12cd34ef",
+    "review": "Audit PASS — hit rate 15/15; consistency: 2 FLW decision points still [rule: TBD] (Low)",
+    "gaps": [
+      "GAP-001"
+    ],
+    "adrs": [],
+    "drifts": [
+      "DRIFT-001"
+    ]
+  },
+  "question": "Continue the pattern unchanged for batches 2–4, or adjust before scaling?",
+  "options": [
+    {
+      "key": "A",
+      "option": "Continue unchanged",
+      "consequence": "same caps, lenses, diagram depth",
+      "cost": "none",
+      "reversible": true,
+      "risk": "low"
+    },
+    {
+      "key": "B",
+      "option": "Continue with design-depth diagrams only in ARC/FLW, drop D7 screen maps",
+      "consequence": "faster Phase 1; UXF text carries screens",
+      "cost": "saves ~15% per batch",
+      "reversible": true,
+      "risk": "BA lens loses the screen map"
+    },
+    {
+      "key": "C",
+      "option": "Re-run the pilot at audit effort High",
+      "consequence": "one more audit before scaling",
+      "cost": "~1 audit",
+      "reversible": true,
+      "risk": "low"
+    }
+  ],
+  "recommendation": {
+    "key": "A",
+    "reason": "The pilot met every shape-check criterion; nothing in the evidence argues for changing the pattern."
+  },
+  "default": {
+    "key": "A",
+    "rule": 4
+  },
+  "decision": {
+    "key": "A",
+    "by": "",
+    "rule": 2,
+    "date": "2026-10-21",
+    "rationale": "pilot shape matched; unattended run",
+    "followups": []
+  }
+}

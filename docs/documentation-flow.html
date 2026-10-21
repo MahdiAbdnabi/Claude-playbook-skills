@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>[hidden]{display:none!important}</style>
+<title>Documentation Playbook Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Same frame as the execution-playbook flow page: one reading column, full-width diagram bands, numbered stages. */
+:root{
+  --bg:#F6F7F4; --surface:#FFFFFF; --surface-2:#ECEFEA; --line:#D5DAD2; --ink:#1C2430; --ink-2:#4A5563; --ink-3:#7C8794;
+  --accent:#3B5BDB; --accent-soft:rgba(59,91,219,.10);
+  --card:#C77D0E; --card-soft:rgba(199,125,14,.12);          /* decision cards */
+  --pass:#0F8C7A; --pass-soft:rgba(15,140,122,.12);           /* checks passed */
+  --stop:#C6453A; --stop-soft:rgba(198,69,58,.12);            /* blocked / blocking */
+  --display:"Sora",system-ui,sans-serif; --body:"Public Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141921; --surface:#1B222C; --surface-2:#232C38; --line:#2F3946; --ink:#E6EAEF; --ink-2:#AEB7C3; --ink-3:#6E7A88;
+  --accent:#8EA3F2; --accent-soft:rgba(142,163,242,.14); --card:#E8A33D; --card-soft:rgba(232,163,61,.14);
+  --pass:#4FD1C5; --pass-soft:rgba(79,209,197,.14); --stop:#F07C70; --stop-soft:rgba(240,124,112,.14); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141921; --surface:#1B222C; --surface-2:#232C38; --line:#2F3946; --ink:#E6EAEF; --ink-2:#AEB7C3; --ink-3:#6E7A88;
+  --accent:#8EA3F2; --accent-soft:rgba(142,163,242,.14); --card:#E8A33D; --card-soft:rgba(232,163,61,.14);
+  --pass:#4FD1C5; --pass-soft:rgba(79,209,197,.14); --stop:#F07C70; --stop-soft:rgba(240,124,112,.14); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4vw,40px);font-weight:700;line-height:1.15;margin:0 0 10px}
+h2{font-size:22px;font-weight:600;margin:0 0 6px}
+h3{font-size:16px;font-weight:600;margin:0 0 6px}
+p{margin:0 0 12px;color:var(--ink-2);max-width:68ch}
+.lede{font-size:18px;color:var(--ink-2);max-width:62ch}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+section{margin-top:56px}
+.stage{display:grid;grid-template-columns:52px 1fr;gap:16px;align-items:start}
+.num{font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid var(--line);border-radius:8px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;margin:18px 0 8px;position:relative}
+.diagram svg{display:block;min-width:720px;width:100%;height:auto}
+.export{position:absolute;top:10px;right:10px;font-family:var(--body);font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer}
+.export:hover,.export:focus-visible{color:var(--accent);border-color:var(--accent);outline:none}
+.overlay[hidden]{display:none!important}
+.overlay{position:fixed;inset:0;background:rgba(10,14,20,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-left,0px));z-index:50}
+.overlay .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;max-width:min(1100px,100%);max-height:100%;overflow:auto;padding:16px;min-width:0}
+.overlay img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px}
+.overlay .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.overlay .hint{font-size:13px;color:var(--ink-2);margin:0}
+.overlay .btns{display:flex;gap:8px}
+.overlay button{font-family:var(--body);font-size:13px;font-weight:500;padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer}
+.overlay button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.overlay button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:13px;color:var(--ink-2);margin:6px 0 0}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1.5px solid}
+.legend .l-stage::before{border-color:var(--accent);background:var(--accent-soft)}
+.legend .l-card::before{border-color:var(--card);background:var(--card-soft)}
+.legend .l-pass::before{border-color:var(--pass);background:var(--pass-soft)}
+.legend .l-stop::before{border-color:var(--stop);background:var(--stop-soft)}
+.legend .l-script::before{border-color:var(--ink-3);background:var(--surface-2);border-style:dashed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.tile h3{margin-bottom:8px}
+.tile ul{margin:0;padding-left:18px;color:var(--ink-2)}
+.tile li{margin:4px 0}
+.tile .opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2)}
+.chip.rec{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.tag{font-family:var(--mono);font-size:12px;padding:1px 6px;border-radius:4px;border:1px solid;white-space:nowrap}
+.t-src{color:var(--pass);border-color:var(--pass)} .t-gap{color:var(--stop);border-color:var(--stop)} .t-dc{color:var(--card);border-color:var(--card)} .t-drift{color:var(--accent);border-color:var(--accent)} .t-plain{color:var(--ink-2);border-color:var(--line)}
+.note{border-left:3px solid var(--card);background:var(--card-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin-top:16px}
+.note p{margin:0;color:var(--ink)}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:14px}
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.doc b{font-family:var(--mono);font-size:12px;color:var(--accent);display:block}
+.doc span{font-size:12.5px;color:var(--ink-2);display:block;line-height:1.35}
+.doc small{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+@media (max-width:640px){.stage{grid-template-columns:1fr}.num{width:36px;height:36px}}
+@media (prefers-reduced-motion:no-preference){.tile{transition:border-color .15s}.tile:hover{border-color:var(--accent)}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">documentation-playbook · how a run works</p>
+  <h1>From a codebase to a traceable, audited corpus</h1>
+  <p class="lede">The skill documents an existing system in batches of modules. Every claim carries its evidence tag, every extraction phase ends with a mechanical check, a fresh auditor samples the citations, and the pilot batch proves the shape before the rest is scaled. The diagram below is the whole run; the sections after it open each part.</p>
+
+  <!-- ========================= OVERVIEW ========================= -->
+  <section>
+    <p class="eyebrow">Overview</p>
+    <h2>One run, end to end</h2>
+    <div class="diagram">
+      <button class="export" type="button" data-export="run-overview">Export PNG</button>
+      <svg id="svg-run-overview" viewBox="0 0 1000 600" role="img" aria-label="Flow of a documentation-playbook run">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-3)"/></marker>
+          <marker id="arrStop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--stop)"/></marker>
+          <marker id="arrPass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--pass)"/></marker>
+        </defs>
+        <style>
+          #svg-run-overview .n rect{rx:8;ry:8;stroke-width:1.5}
+          #svg-run-overview .n text{font-family:var(--body);font-size:13px;fill:var(--ink)}
+          #svg-run-overview .n .sub{font-size:11px;fill:var(--ink-2)}
+          #svg-run-overview .st rect{fill:var(--accent-soft);stroke:var(--accent)}
+          #svg-run-overview .dc rect{fill:var(--card-soft);stroke:var(--card)}
+          #svg-run-overview .ok rect{fill:var(--pass-soft);stroke:var(--pass)}
+          #svg-run-overview .no rect{fill:var(--stop-soft);stroke:var(--stop)}
+          #svg-run-overview .e{fill:none;stroke:var(--ink-3);stroke-width:1.5;marker-end:url(#arr)}
+          #svg-run-overview .e.stop{stroke:var(--stop);marker-end:url(#arrStop)}
+          #svg-run-overview .e.pass{stroke:var(--pass);marker-end:url(#arrPass)}
+          #svg-run-overview .lab{font-family:var(--mono);font-size:10.5px;fill:var(--ink-3)}
+          #svg-run-overview .loopbox{fill:none;stroke:var(--line);stroke-dasharray:5 4;rx:12}
+          #svg-run-overview .looplab{font-family:var(--mono);font-size:11px;fill:var(--ink-3);letter-spacing:.06em}
+        </style>
+
+        <!-- row 1: intake → questions → phase 0 → DC-000 -->
+        <g class="n st"><rect x="20" y="30" width="170" height="56"/><text x="105" y="53" text-anchor="middle">Intake</text><text x="105" y="71" text-anchor="middle" class="sub">summary · access to the target</text></g>
+        <g class="n st"><rect x="230" y="30" width="190" height="56"/><text x="325" y="53" text-anchor="middle">Pre-run questions</text><text x="325" y="71" text-anchor="middle" class="sub">rounds 1 · 2 · 3</text></g>
+        <g class="n st"><rect x="460" y="30" width="200" height="56"/><text x="560" y="53" text-anchor="middle">Phase 0 — Recon</text><text x="560" y="71" text-anchor="middle" class="sub">MOD draft · batch plan · tracker</text></g>
+        <g class="n dc"><rect x="700" y="30" width="130" height="56"/><text x="765" y="53" text-anchor="middle">DC-000</text><text x="765" y="71" text-anchor="middle" class="sub">approve batches · pilot</text></g>
+        <path class="e" d="M190 58H230"/><path class="e" d="M420 58H460"/><path class="e" d="M660 58H700"/>
+        <path class="e" d="M765 86V130"/><text class="lab" x="774" y="112">per batch, pilot first</text>
+
+        <!-- loop box -->
+        <rect class="loopbox" x="20" y="130" width="960" height="330"/>
+        <text class="looplab" x="36" y="150">BATCH LOOP · Extract → Rules → Closeout → Lenses → Audit</text>
+
+        <!-- row 2: phases 1-4 then audit -->
+        <g class="n st"><rect x="40" y="170" width="150" height="56"/><text x="115" y="193" text-anchor="middle">1 · Core extraction</text><text x="115" y="211" text-anchor="middle" class="sub">pack · 10 docs · doc_check</text></g>
+        <g class="n st"><rect x="220" y="170" width="160" height="56"/><text x="300" y="193" text-anchor="middle">2 · Rules &amp; invariants</text><text x="300" y="211" text-anchor="middle" class="sub">BRI · TST · protected status</text></g>
+        <g class="n st"><rect x="410" y="170" width="140" height="56"/><text x="480" y="193" text-anchor="middle">3 · Closeout</text><text x="480" y="211" text-anchor="middle" class="sub">FLW pass 2 · OPS · IDX</text></g>
+        <g class="n st"><rect x="580" y="170" width="120" height="56"/><text x="640" y="193" text-anchor="middle">4 · Lenses</text><text x="640" y="211" text-anchor="middle" class="sub">role views, reformat</text></g>
+        <g class="n st"><rect x="730" y="170" width="150" height="56"/><text x="805" y="193" text-anchor="middle">5 · Audit</text><text x="805" y="211" text-anchor="middle" class="sub">fresh · sample · falsify</text></g>
+        <path class="e" d="M190 198H220"/><path class="e" d="M380 198H410"/><path class="e" d="M550 198H580"/><path class="e" d="M700 198H730"/>
+        <path class="e pass" d="M880 198H912"/><text class="lab" x="882" y="188">≥90%</text>
+        <g class="n ok"><rect x="912" y="170" width="58" height="56"/><text x="941" y="202" text-anchor="middle">done</text></g>
+
+        <!-- checkpoints label -->
+        <text class="lab" x="40" y="246">each phase: pack in → doc_check out → checkpoint · call cap</text>
+
+        <!-- fail loop -->
+        <path class="e stop" d="M805 226V270"/><text class="lab" x="814" y="252">FAIL</text>
+        <g class="n st"><rect x="730" y="270" width="150" height="56"/><text x="805" y="293" text-anchor="middle">Fix</text><text x="805" y="311" text-anchor="middle" class="sub">continue the extractor</text></g>
+        <path class="e" d="M730 298H700"/>
+        <g class="n st"><rect x="520" y="270" width="180" height="56"/><text x="610" y="293" text-anchor="middle">Scoped re-audit</text><text x="610" y="311" text-anchor="middle" class="sub">prior misses · changed sections</text></g>
+        <path class="e pass" d="M610 270V226H730"/><text class="lab" x="618" y="252">PASS → done</text>
+        <path class="e stop" d="M610 326V370"/><text class="lab" x="619" y="352">FAIL ×2</text>
+        <g class="n no"><rect x="520" y="370" width="180" height="48"/><text x="610" y="391" text-anchor="middle">BLOCKED</text><text x="610" y="407" text-anchor="middle" class="sub">batch stops</text></g>
+        <g class="n dc"><rect x="730" y="370" width="150" height="48"/><text x="805" y="391" text-anchor="middle">DC — human</text><text x="805" y="407" text-anchor="middle" class="sub">re-extract · narrow · stop</text></g>
+        <path class="e" d="M700 394H730"/>
+        <text class="lab" x="60" y="290">re-audit escalates to a full audit at the audit tier when:</text><text class="lab" x="60" y="306">[PROTECTED] miss · &gt;⅓ of the batch's documents changed · attempt 3</text>
+
+        <!-- pilot shape check -->
+        <g class="n dc"><rect x="40" y="370" width="200" height="48"/><text x="140" y="391" text-anchor="middle">DC — pilot shape check</text><text x="140" y="407" text-anchor="middle" class="sub">scale · adjust taxonomy · re-pilot</text></g>
+        <text class="lab" x="44" y="436">after the pilot batch's audit only</text>
+
+        <!-- loop back to phase 1 -->
+        <path class="e" d="M941 226V446H30V198H40"/>
+        <text class="lab" x="300" y="440">next batch · independent batches run concurrently</text>
+
+        <!-- row 3: KB → delivery -->
+        <path class="e" d="M395 460V500"/>
+        <g class="n st"><rect x="300" y="500" width="190" height="56"/><text x="395" y="523" text-anchor="middle">6 · AI knowledge base</text><text x="395" y="541" text-anchor="middle" class="sub">IDX final · retrieval-ready corpus</text></g>
+        <g class="n ok"><rect x="530" y="500" width="190" height="56"/><text x="625" y="523" text-anchor="middle">Delivery</text><text x="625" y="541" text-anchor="middle" class="sub">MD / HTML · diagrams · tracker</text></g>
+        <path class="e" d="M490 528H530"/>
+        <text class="lab" x="740" y="522">code changed later →</text><text class="lab" x="740" y="538">[STALE] → delta round</text>
+      </svg>
+    </div>
+    <div class="legend"><span class="l-stage">phase run by an agent</span><span class="l-card">Decision Card</span><span class="l-pass">verified / done</span><span class="l-stop">stop</span></div>
+  </section>
+
+  <!-- ========================= STAGE 1 ========================= -->
+  <section class="stage">
+    <div class="num">01</div>
+    <div>
+      <h2>Intake and the pre-run questions</h2>
+      <p>Both intake inputs are optional: a summary of the system's business and technical shape, and how to reach the target (repository, folder, running environment). Everything the summary says is treated as a claim to verify, not a fact. Three question rounds follow, and nothing is generated until they are answered.</p>
+      <div class="grid">
+        <div class="tile"><h3>Round 1 — how the run executes</h3>
+          <div class="opts"><span class="chip">Fully Automated</span><span class="chip">User Monitored</span></div>
+          <ul><li>Output format HTML / MD / Both (Markdown is always authored; HTML is rendered from it)</li><li>Cost profile Very Low Budget / Recommended / I Am Too Rich → model tier per phase</li><li>Lenses: Architect, Developer, QA, BA always; OPS, SEC, DATA, PO, SUP, INTG, MIG, AUD on request</li></ul></div>
+        <div class="tile"><h3>Round 2 — output profile</h3>
+          <div class="opts"><span class="chip rec">Full</span><span class="chip">30-min read</span><span class="chip">10-min read</span></div>
+          <ul><li>Content: documents + diagrams, documents only, diagrams only</li><li>Diagram style: static Mermaid, interactive page (HTML only), none</li><li>Diagram depth: high-level design, design, full tracking (D1–D10)</li></ul></div>
+        <div class="tile"><h3>Round 3 — checking</h3>
+          <div class="opts"><span class="chip">Audit effort None · Low · Medium · High</span></div>
+          <ul><li>None: doc_check only, every batch marked unaudited</li><li>Low: citation sample only (~5–10k per audit)</li><li>Medium: auditor pack + 5 falsifications (~15–40k)</li><li>High: whole corpus and repository (~80–300k)</li></ul></div>
+      </div>
+      <p style="margin-top:14px">The run reads the configuration back in one block, generates the tracker and the usage guide, and only then starts Phase 0.</p>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 2 ========================= -->
+  <section class="stage">
+    <div class="num">02</div>
+    <div>
+      <h2>Inside one batch: extract, check, audit</h2>
+      <p>Phases 1–3 share the same shape, drawn once here. Dashed boxes are scripts that ship with the skill; they replace the hand steps (reading lists, manual citation checks, pasted logs) that made earlier runs expensive and let confident-but-wrong claims through.</p>
+      <div class="diagram">
+        <button class="export" type="button" data-export="batch-loop">Export PNG</button>
+        <svg id="svg-batch-loop" viewBox="0 0 1000 440" role="img" aria-label="Extraction, mechanical check and audit detail for one batch">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-3)"/></marker>
+            <marker id="arrStop2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--stop)"/></marker>
+            <marker id="arrPass2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--pass)"/></marker>
+          </defs>
+          <style>
+            #svg-batch-loop .n rect{rx:8;ry:8;stroke-width:1.5}
+            #svg-batch-loop .n text{font-family:var(--body);font-size:12.5px;fill:var(--ink)}
+            #svg-batch-loop .n .sub{font-size:10.5px;fill:var(--ink-2)}
+            #svg-batch-loop .st rect{fill:var(--accent-soft);stroke:var(--accent)}
+            #svg-batch-loop .sc rect{fill:var(--surface-2);stroke:var(--ink-3);stroke-dasharray:4 3}
+            #svg-batch-loop .ok rect{fill:var(--pass-soft);stroke:var(--pass)}
+            #svg-batch-loop .no rect{fill:var(--stop-soft);stroke:var(--stop)}
+            #svg-batch-loop .dc rect{fill:var(--card-soft);stroke:var(--card)}
+            #svg-batch-loop .e{fill:none;stroke:var(--ink-3);stroke-width:1.5;marker-end:url(#arr2)}
+            #svg-batch-loop .e.stop{stroke:var(--stop);marker-end:url(#arrStop2)}
+            #svg-batch-loop .e.pass{stroke:var(--pass);marker-end:url(#arrPass2)}
+            #svg-batch-loop .lab{font-family:var(--mono);font-size:10.5px;fill:var(--ink-3)}
+            #svg-batch-loop .band{font-family:var(--mono);font-size:11px;fill:var(--ink-3);letter-spacing:.06em}
+          </style>
+          <text class="band" x="20" y="24">EXTRACT · extractor agent · one conversation per phase · call cap</text>
+          <g class="n sc"><rect x="20" y="40" width="210" height="52"/><text x="125" y="61" text-anchor="middle">build_context_pack.py</text><text x="125" y="78" text-anchor="middle" class="sub">shared block (cached) + extractor block</text></g>
+          <g class="n st"><rect x="260" y="40" width="220" height="52"/><text x="370" y="61" text-anchor="middle">Extract the phase's documents</text><text x="370" y="78" text-anchor="middle" class="sub">every claim [src:] · [GAP] · [PLANNED]</text></g>
+          <g class="n sc"><rect x="510" y="40" width="200" height="52"/><text x="610" y="61" text-anchor="middle">doc_check.py</text><text x="610" y="78" text-anchor="middle" class="sub">citations · hedges · ids · tree hash</text></g>
+          <g class="n ok"><rect x="800" y="40" width="180" height="52"/><text x="890" y="61" text-anchor="middle">Checkpoint</text><text x="890" y="78" text-anchor="middle" class="sub">gaps as one-line questions</text></g>
+          <path class="e" d="M230 66H260"/><path class="e" d="M480 66H510"/>
+          <path class="e pass" d="M710 66H800"/><text class="lab" x="730" y="58">clean</text>
+          <path class="e stop" d="M610 92V112H370V92"/><text class="lab" x="400" y="124">BLOCKING → fix in the same conversation (unresolved [src] · hedging word · missing status)</text>
+
+          <text class="band" x="20" y="160">AUDIT · fresh auditor · did not write the corpus</text>
+          <g class="n sc"><rect x="20" y="176" width="210" height="52"/><text x="125" y="197" text-anchor="middle">doc_check.py --sample 15</text><text x="125" y="214" text-anchor="middle" class="sub">cited members' text, extracted</text></g>
+          <g class="n sc"><rect x="260" y="176" width="220" height="52"/><text x="370" y="197" text-anchor="middle">build_context_pack.py --phase 5</text><text x="370" y="214" text-anchor="middle" class="sub">auditor pack sized by audit effort</text></g>
+          <g class="n st"><rect x="510" y="170" width="300" height="64"/><text x="660" y="192" text-anchor="middle">Audit (hash check first)</text><text x="660" y="209" text-anchor="middle" class="sub">sample hits / misses · 5 falsifications · cross-refs</text><text x="660" y="224" text-anchor="middle" class="sub">model per cost profile · scope per audit effort</text></g>
+          <path class="e" d="M230 202H260"/><path class="e" d="M480 202H510"/>
+          <path class="e pass" d="M810 202H846"/><text class="lab" x="812" y="192">≥90%</text>
+          <g class="n ok"><rect x="846" y="176" width="134" height="52"/><text x="913" y="197" text-anchor="middle">Batch verified</text><text x="913" y="214" text-anchor="middle" class="sub">maturity lines updated</text></g>
+          <path class="e stop" d="M660 234V280"/><text class="lab" x="668" y="262">FAIL → misses.json</text>
+
+          <text class="band" x="20" y="272">FIX LOOP · max 2</text>
+          <g class="n st"><rect x="510" y="280" width="300" height="52"/><text x="660" y="301" text-anchor="middle">Fix — continue the extractor</text><text x="660" y="318" text-anchor="middle" class="sub">misses as facts · doc_check once</text></g>
+          <path class="e" d="M510 306H480"/>
+          <g class="n sc"><rect x="260" y="280" width="220" height="52"/><text x="370" y="301" text-anchor="middle">build_context_pack.py --scoped</text><text x="370" y="318" text-anchor="middle" class="sub">misses · changed sections · triggers</text></g>
+          <path class="e" d="M260 306H230"/>
+          <g class="n st"><rect x="20" y="280" width="210" height="52"/><text x="125" y="301" text-anchor="middle">Scoped re-audit</text><text x="125" y="318" text-anchor="middle" class="sub">one tier below · or full on a trigger</text></g>
+          <path class="e pass" d="M190 280V250H913V228"/><text class="lab" x="200" y="244">PASS → batch verified</text>
+          <path class="e stop" d="M80 332V380H370"/><text class="lab" x="120" y="372">2nd FAIL → BLOCKED + Decision Card</text>
+          <g class="n no"><rect x="370" y="356" width="130" height="48"/><text x="435" y="377" text-anchor="middle">BLOCKED</text><text x="435" y="393" text-anchor="middle" class="sub">batch stops</text></g>
+          <g class="n dc"><rect x="530" y="356" width="200" height="48"/><text x="630" y="377" text-anchor="middle">DC — human</text><text x="630" y="393" text-anchor="middle" class="sub">re-extract · narrow scope · stop</text></g>
+          <path class="e" d="M500 380H530"/>
+          <text class="lab" x="20" y="424">a miss "resolved" by deleting the claim without a [GAP] is itself a finding</text>
+        </svg>
+      </div>
+      <div class="legend"><span class="l-stage">agent stage</span><span class="l-script">shipped script</span><span class="l-pass">pass</span><span class="l-stop">blocking / fail</span></div>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 3 ========================= -->
+  <section class="stage">
+    <div class="num">03</div>
+    <div>
+      <h2>Guards: what each shortcut is not allowed to hide</h2>
+      <p>Every cost-saving rule carries a mechanical check, so a cheaper or shorter run cannot pass as a thorough one — and a document never sounds more certain than its evidence.</p>
+      <div class="tbl"><table>
+        <tr><th>Rule</th><th>What it saves</th><th>Guard</th></tr>
+        <tr><td>Evidence tags</td><td>No re-reading to find out what is proven</td><td>Every non-trivial claim is <span class="tag t-src">[src: File#Member]</span>, <span class="tag t-gap">[GAP]</span>, <span class="tag t-drift">[DRIFT]</span>, <span class="tag t-plain">[PLANNED]</span> or <span class="tag t-plain">[UNTESTED]</span>; hedging words are forbidden — evidence or a gap, never "probably"</td></tr>
+        <tr><td>Pilot first</td><td>A wrong taxonomy is found on one batch, not seven</td><td>The pilot's audit closes with a Decision Card: scale, adjust the document shape, or re-pilot; nothing else starts before it</td></tr>
+        <tr><td>Context packs</td><td>Extractors stop loading the whole repository and corpus</td><td>Shared block hashed and placed first for caching; packs stamped with the commit, quoted files marked <span class="tag t-plain">[STALE]</span> if changed; a helper that needs more raises a gap instead of roaming; the auditor's pack is built from the corpus and the check, never from the extractor's</td></tr>
+        <tr><td>Mechanical check</td><td>The auditor no longer spends its budget on broken citations</td><td><code>doc_check.py</code> after every extraction phase: every citation resolves to file#member, GAP/DRIFT ids reconcile with the logs, <code>[rule: TBD]</code> is zero after Phase 3, every <span class="tag t-plain">[PROTECTED]</span> has a status, every diagram element is tagged; a blocking report does not close the checkpoint</td></tr>
+        <tr><td>One check per phase</td><td>No re-runs by the orchestrator or the auditor</td><td>Report stamped with the code's tree hash; the auditor's first action is to confirm the hash still matches; a mismatch means the corpus describes different code</td></tr>
+        <tr><td>Call caps</td><td>Shorter conversations, fewer re-reads</td><td>Caps per phase by depth; stopping at the cap with documents saved and a done / left / next note is a correct outcome; the cap never skips the check; a hit raises a card</td></tr>
+        <tr><td>Fix by continuation</td><td>No fresh fix helper reloading the batch</td><td>Only while the extractor's conversation is cached and under the token threshold; misses enter as facts; deleting a claim without a gap is a finding at re-audit</td></tr>
+        <tr><td>Scoped re-audit</td><td>Second audits cost a fraction of the first</td><td>Escalates to a full audit at the audit tier when a miss was on a <span class="tag t-plain">[PROTECTED]</span> rule, more than a third of the batch's documents changed, or it is attempt 3</td></tr>
+        <tr><td>Audit effort levels</td><td>Low and Medium cost 5–40k per audit instead of 80–300k</td><td>None marks every batch unaudited in the tracker and the index; after the pilot the actual tokens and misses are read back next to the chosen level</td></tr>
+      </table></div>
+      <div class="note"><p>Rigor is never on the dial. Depth, content mode, diagram depth, cost profile and audit effort change <em>how much is written</em> and <em>how hard it is checked</em>; they never change that claims carry evidence, the auditor is fresh, gaps are logged instead of guessed, and a <span class="tag t-plain">[PROTECTED]</span> invariant is never silently rewritten.</p></div>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 4 ========================= -->
+  <section class="stage">
+    <div class="num">04</div>
+    <div>
+      <h2>Who runs what, and on which model</h2>
+      <p>The agent that invoked the skill is the orchestrator. It launches a separate agent per phase and batch with the model and effort resolved from the cost profile, runs independent batches concurrently, takes GAP and DRIFT entries back into the tracker, and raises Decision Cards. It never extracts, and the Phase 5 auditor is always an agent that did not write the corpus.</p>
+      <div class="tbl"><table>
+        <tr><th>Phase</th><th>Recommended</th><th>Very Low Budget</th><th>I Am Too Rich</th><th>Critical</th></tr>
+        <tr><td>0 Recon</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>1 Core extraction</td><td>Sonnet / high (Haiku for enumeration)</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>2 Rules &amp; invariants</td><td>Opus / xhigh</td><td>Sonnet / high (floor)</td><td>Fable / xhigh</td><td>yes</td></tr>
+        <tr><td>3 Closeout</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+        <tr><td>4 Lenses</td><td>Haiku / medium</td><td>Haiku / low</td><td>Sonnet / medium</td><td>—</td></tr>
+        <tr><td>5 Audit</td><td>Opus / xhigh</td><td>Sonnet / high (floor)</td><td>Fable / xhigh</td><td>yes</td></tr>
+        <tr><td>5 Scoped re-audit</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>escalates to the audit tier on a trigger</td></tr>
+        <tr><td>6 Knowledge base</td><td>Sonnet / high</td><td>Haiku / medium</td><td>Opus / high</td><td>—</td></tr>
+      </table></div>
+      <p style="margin-top:12px">The tracker shows three columns per phase — recommended, resolved for this profile, actually used from the session log — so a budget run is never mistaken for a recommended one.</p>
+    </div>
+  </section>
+
+  <!-- ========================= STAGE 5 ========================= -->
+  <section class="stage">
+    <div class="num">05</div>
+    <div>
+      <h2>What a run leaves behind</h2>
+      <p>Fourteen documents at full depth (fewer at 30-min and 10-min depth), each with a header naming its system, scope, version, authority and maturity, plus one entry page per lens that routes a role to the documents it needs.</p>
+      <div class="docs">
+        <div class="doc"><b>01 IDX</b><span>Master index &amp; glossary</span><small>Ph 3 → Ph 6</small></div>
+        <div class="doc"><b>02 ARC</b><span>Architecture (C4 at minimum)</span><small>Ph 1</small></div>
+        <div class="doc"><b>03 DAT</b><span>Domain &amp; data model</span><small>Ph 1</small></div>
+        <div class="doc"><b>04 MOD</b><span>Module inventory</span><small>Ph 0 → Ph 1</small></div>
+        <div class="doc"><b>05 API</b><span>Interface surface</span><small>Ph 1</small></div>
+        <div class="doc"><b>06 INT</b><span>Integrations</span><small>Ph 1</small></div>
+        <div class="doc"><b>07 XCC</b><span>Cross-cutting concerns</span><small>Ph 1</small></div>
+        <div class="doc"><b>08 CNV</b><span>Conventions as practised</span><small>Ph 1</small></div>
+        <div class="doc"><b>09 UXF</b><span>UX &amp; interaction flows</span><small>Ph 1</small></div>
+        <div class="doc"><b>10 FLW</b><span>Key business flows</span><small>Ph 1 → Ph 3</small></div>
+        <div class="doc"><b>11 BRI</b><span>Business rules &amp; invariants</span><small>Ph 2</small></div>
+        <div class="doc"><b>12 TST</b><span>Test coverage map</span><small>Ph 2</small></div>
+        <div class="doc"><b>13 OPS</b><span>Build / deploy / runbook</span><small>Ph 3</small></div>
+        <div class="doc"><b>14 DEP</b><span>Dependency inventory</span><small>Ph 1</small></div>
+      </div>
+      <div class="grid">
+        <div class="tile"><h3>Records</h3><ul><li><code>_playbook/TRACKER.md</code> run config, phase × batch matrix, GAP / DRIFT / decision logs, next action</li><li><code>decisions/DC-###.md</code> every card with its evidence and outcome</li><li><code>lenses/</code> one entry page per role</li><li><code>diagrams/</code> Mermaid blocks or the interactive page</li></ul></div>
+        <div class="tile"><h3>Evidence</h3><ul><li><code>logs/check-n.json</code> mechanical check per phase, tree-hashed</li><li><code>logs/sample-n.json</code> the citations the auditor saw, with the code</li><li><code>logs/audit-n-misses.json</code> what was wrong, what the code says</li><li><code>packs/</code> what each helper was actually given</li></ul></div>
+        <div class="tile"><h3>Measurement</h3><ul><li>Citation hit rate first audit → re-audit; scoped vs full</li><li>Calls per phase against the cap; cap hits</li><li>Unresolved citations and hedges caught before the auditor</li><li>Open gaps by severity; drift on protected invariants</li></ul></div>
+      </div>
+      <p style="margin-top:14px">The tracker's "Next action" line and the usage guide are what a returning person or a fresh session reads first. When the code changes later, a delta round marks affected citations <code>[STALE]</code> and re-runs only the phases that touch the changed modules.</p>
+    </div>
+  </section>
+
+  <footer>Tags used throughout: <span class="tag t-src">[src:]</span> <span class="tag t-gap">[GAP]</span> <span class="tag t-drift">[DRIFT]</span> <span class="tag t-plain">[PLANNED]</span> <span class="tag t-plain">[UNTESTED]</span> <span class="tag t-plain">[PROTECTED]</span> <span class="tag t-dc">[DC-###]</span> · Phase 6 packages a corpus the audit has already verified, so the AI knowledge base inherits the evidence trail rather than restating it.</footer>
+
+<div id="png-overlay" class="overlay" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-label="Diagram as PNG">
+    <div class="bar">
+      <p class="hint" id="png-hint">PNG ready. Right-click (or long-press on a phone) the image and choose "Save image as", or copy it.</p>
+      <div class="btns"><button type="button" id="png-copy" class="primary">Copy image</button><button type="button" id="png-close">Close</button></div>
+    </div>
+    <img id="png-img" alt="Exported diagram">
+  </div>
+</div>
+<script>
+(function(){
+  var PROPS=['fill','stroke','stroke-width','stroke-dasharray','marker-end','marker-start','font-family','font-size','font-weight','letter-spacing','text-anchor','opacity'];
+  function inlineStyles(src, clone){
+    var a=src.querySelectorAll('*'), b=clone.querySelectorAll('*');
+    for(var i=0;i<a.length;i++){
+      var cs=getComputedStyle(a[i]); var st='';
+      PROPS.forEach(function(p){ var v=cs.getPropertyValue(p); if(v) st+=p+':'+v+';'; });
+      if(a[i].tagName.toLowerCase()==='rect'){ var rx=cs.getPropertyValue('rx'); if(rx&&rx!=='auto'){ b[i].setAttribute('rx',parseFloat(rx)); b[i].setAttribute('ry',parseFloat(rx)); } }
+      b[i].setAttribute('style',st);
+    }
+    clone.querySelectorAll('style').forEach(function(x){x.remove();});
+  }
+  function exportPng(id){
+    var src=document.getElementById('svg-'+id); if(!src) return;
+    var clone=src.cloneNode(true); inlineStyles(src, clone);
+    clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var vb=src.viewBox.baseVal, W=vb.width, H=vb.height, scale=2;
+    clone.setAttribute('width',W); clone.setAttribute('height',H);
+    var bg=getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fff';
+    var xml=new XMLSerializer().serializeToString(clone);
+    var img=new Image();
+    img.onload=function(){
+      var c=document.createElement('canvas'); c.width=W*scale; c.height=H*scale;
+      var ctx=c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+      var out=document.getElementById('png-img'); out.src=c.toDataURL('image/png'); out.dataset.name=id+'.png';
+      document.getElementById('png-hint').textContent='PNG ready ('+(W*scale)+'×'+(H*scale)+'). Right-click, or long-press on a phone, and choose "Save image as" — or copy it.';
+      var ov=document.getElementById('png-overlay'); ov.hidden=false; document.getElementById('png-close').focus();
+    };
+    img.onerror=function(){ document.getElementById('png-hint').textContent='Could not rasterise this diagram in this browser.'; document.getElementById('png-overlay').hidden=false; };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+  }
+  window.__exportSvgDataUrl=function(id,cb){ /* used by the repo's PNG export script */
+    var src=document.getElementById('svg-'+id); var clone=src.cloneNode(true); inlineStyles(src, clone);
+    clone.setAttribute('xmlns','http://www.w3.org/2000/svg'); var vb=src.viewBox.baseVal; clone.setAttribute('width',vb.width); clone.setAttribute('height',vb.height);
+    var bg=getComputedStyle(document.body).getPropertyValue('--surface').trim()||'#fff'; var xml=new XMLSerializer().serializeToString(clone);
+    var img=new Image(); img.onload=function(){ var c=document.createElement('canvas'); c.width=vb.width*2; c.height=vb.height*2; var ctx=c.getContext('2d'); ctx.fillStyle=bg; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height); cb(c.toDataURL('image/png')); };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+  };
+  document.querySelectorAll('[data-export]').forEach(function(b){ b.addEventListener('click',function(){ exportPng(b.dataset.export); }); });
+  document.getElementById('png-close').addEventListener('click',function(){ document.getElementById('png-overlay').hidden=true; });
+  document.getElementById('png-overlay').addEventListener('click',function(e){ if(e.target===e.currentTarget) e.currentTarget.hidden=true; });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') document.getElementById('png-overlay').hidden=true; });
+  document.getElementById('png-copy').addEventListener('click',function(){
+    var btn=this, img=document.getElementById('png-img');
+    function done(t){ btn.textContent=t; setTimeout(function(){btn.textContent='Copy image';},1800); }
+    try{
+      fetch(img.src).then(function(r){return r.blob();}).then(function(blob){
+        return navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      }).then(function(){done('Copied');}).catch(function(){done('Copy not allowed here — save the image instead');});
+    }catch(err){ done('Copy not allowed here — save the image instead'); }
+  });
+})();
+</script>
+</div>
+
+</body>
+</html>

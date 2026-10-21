@@ -1,0 +1,41 @@
+{
+  "system": "Entry-Exit",
+  "scope": "Movement & Risk",
+  "version": "D-set v1, 2026-10-14",
+  "maturity": "11 nodes · 9 edges · 82% [src] · 1 [GAP] · 1 [PLANNED]",
+  "lenses": ["ARCH", "DEV", "QA", "BA"],
+  "nodes": [
+    { "id": "officer", "label": "Immigration officer", "level": "hld", "kind": "actor", "claim": "Primary user at the counter", "src": "UXF §1", "tags": ["src"], "lenses": ["BA", "QA", "ARCH"] },
+    { "id": "ui", "label": "Counter UI (Angular 21)", "level": "hld", "kind": "container", "claim": "Officer-facing SPA hosted in the WebView2 shell", "src": "app.config.ts#bootstrap", "tags": ["src"], "lenses": ["ARCH", "DEV", "QA", "BA"] },
+    { "id": "api", "label": "Movement API (.NET 10)", "level": "hld", "kind": "container", "claim": "Processes arrivals and departures; owns risk assessment", "src": "Program.cs#Main", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "mongo", "label": "MongoDB", "level": "hld", "kind": "entity", "claim": "Movement and traveller documents", "src": "MovementRepository.cs#Collection", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "redis", "label": "Redis", "level": "hld", "kind": "entity", "claim": "Distributed locks and risk-score cache", "src": "MovementLock.cs#Acquire", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "yaqeen", "label": "YAQEEN biometrics", "level": "hld", "kind": "external", "claim": "External identity lookup by fingerprint", "src": "YaqeenClient.cs#Match", "tags": ["src"], "lenses": ["ARCH", "BA"] },
+    { "id": "risk", "label": "RiskAssessment", "level": "design", "kind": "component", "parent": "api", "claim": "Combines check outcomes worst-wins", "src": "RiskEngine.cs#Combine", "tags": ["src", "protected"], "lenses": ["ARCH", "DEV", "QA"] },
+    { "id": "movsvc", "label": "MovementService", "level": "design", "kind": "component", "parent": "api", "claim": "Creates/updates movements with idempotency key", "src": "MovementService.cs#CreateUpdateMovement", "tags": ["src"], "lenses": ["DEV", "QA"] },
+    { "id": "expiry", "label": "Risk-score expiry", "level": "design", "kind": "component", "parent": "api", "claim": "Expiry window read from config; value not found in any environment file", "src": "", "tags": ["gap"], "lenses": ["DEV", "ARCH"], "notes": "GAP-014" },
+    { "id": "rev24", "label": "Re-verification < 24h", "level": "design", "kind": "component", "parent": "api", "claim": "On the roadmap; no code exists", "src": "", "tags": ["planned"], "lenses": ["BA", "ARCH"] },
+    { "id": "br003", "label": "BR-003 worst-wins", "level": "tracking", "kind": "rule", "claim": "Most severe outcome governs", "src": "RiskEngine.cs#Combine", "tags": ["src", "protected", "untested"], "lenses": ["QA", "DEV"] }
+  ],
+  "edges": [
+    { "id": "e1", "from": "officer", "to": "ui", "label": "uses", "level": "hld", "claim": "Officer operates the counter UI", "src": "UXF §1", "tags": ["src"], "lenses": ["BA", "QA"] },
+    { "id": "e2", "from": "ui", "to": "api", "label": "REST/JSON", "level": "hld", "claim": "UI calls the API over HTTPS", "src": "movement.service.ts#post", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "e3", "from": "api", "to": "mongo", "label": "driver", "level": "hld", "claim": "Persists movements", "src": "MovementRepository.cs#Upsert", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "e4", "from": "api", "to": "redis", "label": "lock/cache", "level": "hld", "claim": "Distributed lock per traveller", "src": "MovementLock.cs#Acquire", "tags": ["src"], "lenses": ["ARCH", "DEV"] },
+    { "id": "e5", "from": "api", "to": "yaqeen", "label": "SOAP", "level": "hld", "claim": "Fingerprint match request", "src": "YaqeenClient.cs#Match", "tags": ["src"], "lenses": ["ARCH"] },
+    { "id": "e6", "from": "movsvc", "to": "risk", "label": "assess", "level": "design", "claim": "Movement service asks for a combined risk result", "src": "MovementService.cs#CreateUpdateMovement", "tags": ["src"], "lenses": ["DEV", "QA"] },
+    { "id": "e7", "from": "risk", "to": "expiry", "label": "reads TTL", "level": "design", "claim": "TTL source unknown", "src": "", "tags": ["gap"], "lenses": ["DEV"] },
+    { "id": "e8", "from": "movsvc", "to": "rev24", "label": "planned", "level": "design", "claim": "Future re-verification hook", "src": "", "tags": ["planned"], "lenses": ["BA"] },
+    { "id": "e9", "from": "risk", "to": "br003", "label": "enforces", "level": "tracking", "claim": "Combine() implements BR-003", "src": "RiskEngine.cs#Combine", "tags": ["src", "protected"], "lenses": ["QA", "DEV"] }
+  ],
+  "flows": [
+    { "id": "F-01", "name": "Arrival — first-time traveller", "level": "tracking",
+      "steps": [
+        { "node": "ui", "edge": "e1", "claim": "Officer scans the passport", "src": "ScanComponent.ts#onScan", "tags": ["src"] },
+        { "node": "api", "edge": "e2", "claim": "UI posts the movement", "src": "MovementController.cs#Post", "tags": ["src"] },
+        { "node": "yaqeen", "edge": "e5", "claim": "Fingerprint match requested", "src": "YaqeenClient.cs#Match", "tags": ["src"] },
+        { "node": "risk", "edge": "e6", "claim": "Outcomes combined worst-wins", "src": "RiskEngine.cs#Combine", "rule": "BR-003", "test": "[UNTESTED: BR-003]", "tags": ["src", "protected", "untested"] },
+        { "node": "mongo", "edge": "e3", "claim": "Movement persisted", "src": "MovementRepository.cs#Upsert", "tags": ["src"] }
+      ] }
+  ]
+}

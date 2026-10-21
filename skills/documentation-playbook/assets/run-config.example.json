@@ -1,0 +1,159 @@
+{
+  "system": "Entry-Exit (working name — see GAP-001)",
+  "target": "Cowork project folder: modern-entryexit-core",
+  "summary": "Border movement processing for immigration counters. .NET 10 API + Angular 21 UI, MongoDB, Redis; WPF/WebView2 shell for device integration.",
+  "mode": "monitored",
+  "format": "both",
+  "cost_profile": "recommended",
+  "depth": "full",
+  "content": "docs+diagrams",
+  "diagram_style": "static",
+  "diagram_depth": "design",
+  "audit_depth": "medium",
+  "decision_cards": [
+    {
+      "id": "DC-000",
+      "title": "Approve batch plan and pilot",
+      "wp": "",
+      "between": "Phase 0 → Phase 1 (pilot)",
+      "status": "DECIDED",
+      "stops_run": true,
+      "decision": "A",
+      "by": "Mahdi",
+      "rule": null,
+      "date": "2026-10-07"
+    }
+  ],
+  "checks": [
+    {
+      "check": 1,
+      "batch": "Movement & Risk",
+      "date": "2026-10-07",
+      "citations_total": 219,
+      "resolved": 212,
+      "unresolved": 0,
+      "hedges": 0,
+      "untraced": 4,
+      "blocking": false
+    }
+  ],
+  "output_dir": "docs/",
+  "started": "2026-10-07",
+  "corpus_ref": "git 3f9c2a1 (2026-10-07)",
+  "lenses": [
+    {
+      "id": "MIG",
+      "audience": "Rewrite team",
+      "entry_points": [
+        "BRI",
+        "FLW",
+        "DAT",
+        "TST",
+        "DRIFT log"
+      ],
+      "concerns": "everything that must survive the rewrite; where parity is unproven"
+    }
+  ],
+  "seed_invariants": [
+    "Worst-wins outcome combiner — the most severe result governs, never the latest or an average",
+    "Mandatory server-side authorization gates at every relevant point"
+  ],
+  "phase_status": {
+    "0": "done",
+    "5": "pending",
+    "6": "pending"
+  },
+  "batches": [
+    {
+      "name": "Movement & Risk",
+      "modules": [
+        "Movement.Api",
+        "RiskAssessment",
+        "movement-ui"
+      ],
+      "pilot": true,
+      "phases": {
+        "1": "done",
+        "2": "in_progress",
+        "3": "pending",
+        "4": "pending"
+      }
+    },
+    {
+      "name": "Identity & Documents",
+      "modules": [
+        "Identity",
+        "DocumentVerification"
+      ],
+      "pilot": false,
+      "phases": {
+        "1": "pending",
+        "2": "pending",
+        "3": "pending",
+        "4": "pending"
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "GAP-001",
+      "severity": "High",
+      "desc": "Three system names appear across solution, namespaces and README",
+      "found_in": "MOD, Phase 0",
+      "blocks": "System: header field in every document",
+      "question": "Which is the official name: EntryExit, ADS BMS, or Immigration Counter System?",
+      "answered": ""
+    },
+    {
+      "id": "GAP-014",
+      "severity": "Low",
+      "desc": "Risk-score expiry window read from config; no value in any environment file",
+      "found_in": "XCC, Phase 1, Movement & Risk",
+      "blocks": "nothing — documented as configurable, value unknown",
+      "question": "Where is RiskScoreExpiryMinutes set in deployed environments?",
+      "answered": ""
+    }
+  ],
+  "drifts": [
+    {
+      "id": "DRIFT-001",
+      "desc": "Override level for HIGH risk result",
+      "side_a": "Legacy BRI-007: supervisor override required",
+      "side_b": "[src: RiskAssessmentController.cs#Override] accepts officer role",
+      "protected": true,
+      "decision": ""
+    }
+  ],
+  "decisions": [
+    {
+      "date": "2026-10-07",
+      "decision": "Pilot batch = Movement & Risk (BUILT, touches worst-wins invariant)",
+      "by": "Mahdi"
+    }
+  ],
+  "citation_samples": [],
+  "sessions": [
+    {
+      "date": "2026-10-07",
+      "phase": "0",
+      "batch": "",
+      "model": "sonnet / high",
+      "notes": "7 modules, 2 batches proposed, naming GAP-001",
+      "calls": 14,
+      "cap": 20,
+      "tokens": 36000
+    },
+    {
+      "date": "2026-10-07",
+      "phase": "1",
+      "batch": "Movement & Risk",
+      "model": "sonnet / high",
+      "notes": "10 docs extended; 3 Low gaps",
+      "calls": 31,
+      "cap": 40,
+      "tokens": 74000
+    }
+  ],
+  "delta_rounds": [],
+  "next_action": "Phase 2 for batch 'Movement & Risk' — strongest model, xhigh effort; seed invariants 1–2 in scope."
+}
